@@ -6,12 +6,14 @@ module (bl_classes).
 """
 
 from bl_classes import *
+import pickle
 
 def play_one_round(players, names, verbose):
     """Play a full round and return the winner (str)."""
     r = Round(players, names, verbose) # Instance of one Battle Line round
     r.generate_decks_and_deal_hands()
 
+    logData = {'rounds': []}
     while r.winner == None: # Take turns until game ends.
         hand = r.h[r.whoseTurn]
         if verbose:
@@ -35,7 +37,7 @@ def play_one_round(players, names, verbose):
                 flag.try_to_resolve(r.whoseTurn)
 
             r.winner = r.check_winner()
-
+            logData['rounds'].append(copy.deepcopy([f.played for f in r.flags]))
             if verbose:
                 print(padLength * ' ' + 'Plays {} at {}'.format(card, target))
                 print(padLength * ' ' + 'Draws {}\n'.format(deckName))
@@ -43,4 +45,8 @@ def play_one_round(players, names, verbose):
 
         r.whoseTurn = 1 - r.whoseTurn
 
+    logData['winner'] = r.winner
+    logData['flags'] = [f.winner for f in r.flags]
+    with open('neural_network/raw_data.pickle', 'ab') as logFile:
+        pickle.dump(logData, logFile)
     return r.h[r.winner].name
